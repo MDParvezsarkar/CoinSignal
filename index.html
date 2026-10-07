@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coin Signal</title>
+<style>
+:root{--bg:#0b0e11;--c:#181a20;--t:#eaecef;--m:#9aa4b2;--g:#0ecb81;--r:#f6465d;--y:#fcd535}
+*{box-sizing:border-box}body{margin:auto;background:radial-gradient(circle at top,#161c27,#0b0e11 60%) fixed;color:var(--t);font:15px Arial,'Noto Sans Bengali',sans-serif;padding:14px;max-width:1150px}
+h1{margin:0 0 6px;font-size:26px;background:linear-gradient(90deg,#fcd535,#0ecb81);-webkit-background-clip:text;background-clip:text;color:transparent}
+input,select,button{background:#2b3139;color:var(--t);border:1px solid #3a4150;border-radius:8px;padding:8px 11px;font:inherit}
+button{cursor:pointer;background:var(--y);color:#000;font-weight:bold;border:0}.sm{padding:3px 9px;font-size:12px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.pill{padding:4px 10px;border-radius:20px;background:#2b3139;font-size:13px}
+.ok{color:var(--g)}.bad{color:var(--r)}.wait{color:var(--y)}.up{color:var(--g)}.dn{color:var(--r)}.sc{color:var(--m);font-size:12px;line-height:1.5}
+.tabs{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}.tab{background:#2b3139;color:var(--t);font-weight:normal;border-radius:20px;padding:8px 20px}.tab.on{background:var(--y);color:#000;font-weight:bold}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{background:linear-gradient(160deg,#1c212b,#151922);border:1px solid #2b3139;border-radius:14px;padding:14px;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.gb{border-color:var(--g);box-shadow:0 0 14px rgba(14,203,129,.4)}.gs{border-color:var(--r);box-shadow:0 0 14px rgba(246,70,93,.4)}
+.h{display:flex;gap:8px;align-items:center}.h b{flex:1;font-size:17px}.h a{color:var(--y);font-size:12px;text-decoration:none}
+.p{font-size:24px;font-weight:bold}.act{border-radius:10px;padding:8px;margin:8px 0;text-align:center;font-weight:bold}
+.buy{background:var(--g);color:#000}.sell{background:var(--r);color:#fff}.hold{background:rgba(252,213,53,.15);color:var(--y);border:1px solid var(--y)}
+.blink{animation:bl 1s infinite}@keyframes bl{50%{opacity:.3}}
+.bar2{height:8px;background:#2b3139;border-radius:4px;overflow:hidden;margin:5px 0}.bar2 i{display:block;height:100%;background:linear-gradient(90deg,#fcd535,#0ecb81)}
+.z{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.z div{background:#10141a;border-radius:8px;padding:8px;font-size:12px;color:var(--m)}.z b{display:block;font-size:14px;color:var(--t);margin-top:2px}.z span{display:block;font-size:10px;margin-top:2px;color:#6b7686}
+.todo{background:#12161c;border:1px solid #2b3139;border-radius:8px;padding:9px 11px;margin:8px 0;font-size:13px;line-height:1.6}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}td,th{padding:5px 3px;text-align:left;border-bottom:1px solid #2b3139}th{color:var(--m)}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}.row input{width:110px}
+#jserr,#dg{display:none;background:#3b1c22;border:1px solid var(--r);padding:8px;border-radius:8px;margin:8px 0;font-size:13px;line-height:1.7}
+.foot{margin-top:16px;color:var(--m);font-size:12px;line-height:1.6}
+</style></head><body>
+<h1 data-i="title"></h1>
+<div class="bar"><button id="lg" onclick="setLang()" style="background:#fff"></button><span id="st" class="pill wait"></span><span class="sc"><span data-i="nextup"></span>: <b id="cd">--</b></span><button class="sm" onclick="nextAt=0" data-i="updnow"></button><button class="sm" onclick="diag()" data-i="check"></button><button class="sm" onclick="enNotif()">🔔</button></div>
+<div id="jserr"></div><div id="dg"></div>
+<div class="tabs"><button class="tab on" id="tm" onclick="tab('m')" data-i="market"></button><button class="tab" id="tc" onclick="tab('c')" data-i="mycoins"></button></div>
+<section id="pm">
+<div class="tabs"><button class="tab" id="h1" onclick="setH(1)" data-i="h1"></button><button class="tab" id="h12" onclick="setH(12)" data-i="h12"></button><button class="tab" id="h24" onclick="setH(24)" data-i="h24"></button></div>
+<div class="row"><span class="sc" data-i="fund"></span><input id="bg" type="number" oninput="S.bg=+this.value||0;save();renderMarket()"><span class="sc" data-i="risk"></span><input id="rk" type="number" step="any" oninput="S.rk=+this.value||0;save();renderMarket()"></div>
+<div id="mk"></div><div id="stb"></div>
+</section>
+<section id="pc" style="display:none">
+<div class="row"><input id="ac" data-p="addph" onkeydown="if(event.key=='Enter')addCoin()"><button onclick="addCoin()" data-i="addcoin"></button></div>
+<div class="row"><select id="bc"></select><input id="bp" type="number" step="any" data-p="price"><input id="bu" type="number" step="any" data-p="amount"><button onclick="addBuy()" data-i="addbuy"></button></div>
+<div class="row"><span class="sc" data-i="tp"></span><input id="tp" type="number" oninput="S.tp=+this.value||0;save();renderCoins()" style="width:70px"><span class="sc" data-i="sl"></span><input id="sl" type="number" oninput="S.sl=+this.value||0;save();renderCoins()" style="width:70px"></div>
+<div id="cl"></div>
+</section>
+<div class="foot" data-i="foot"></div>
+<script>
+const $=s=>document.querySelector(s);
+const TX={en:{title:'Coin Signal',market:'Market',mycoins:'My Coins',live:'● LIVE',conn:'Connecting...',off:'Not connected',nextup:'Next update',updnow:'Update now',check:'Check connection',updating:'updating...',fund:'Fund ($)',risk:'Risk per trade (%)',h1:'Next 1 hour',h12:'Next 12 hours',h24:'Next 24 hours',addph:'Coin name, e.g. ZEC',addcoin:'+ Add coin',price:'Buy price',amount:'Amount ($)',addbuy:'+ Add my buy',tp:'Sell target (%)',sl:'Stop-loss (%)',sellpart:'Sell part of coins',nocoins:'No coins yet. Add a coin, then add each buy.',loading:'Loading market data...',analysing:'Analysing {n}/{m} coins... first results appear in a few seconds.',
+buy:'▲ BUY NOW',wait:'⏳ WAIT - BUY AT THE DIP',sell:'▼ SELL / DO NOT BUY',chance:'Chance of +5% within {h}h',cases:'similar cases',buyzone:'BUY ZONE',stop:'STOP-LOSS',z1:'SELL ZONE 1',z2:'SELL ZONE 2',n50:'reached in 50% of past windows',n20:'reached in 20% of past windows',dip:'typical dip',nstop:'below the usual dip',
+a_buy:'Price looks good. Buy a small amount inside the buy zone.',a_wait:'No clear entry now. Place a buy order inside the buy zone and wait.',a_sell:'Price looks weak. Do not buy. If you own it, sell.',inv:'Invest ${a} ({p}% of fund): stop -${l}, zone 1 +${g1}, zone 2 +${g2}.',sellby:'If no target is reached, sell by {x}.',up:'Uptrend',down:'Downtrend',today:'today',binance:'Trade on Binance ↗',addmine:'+ Add to my coins',stabt:'Stable coins (should stay near $1)',stabn:'Stable coins hold about $1, so they give no trading profit. Use them to park cash. A price far from $1 means depeg risk.',ok:'Normal',watch:'Watch',depeg:'Depeg risk',
+bought:'Bought at',amt:'Amount',plnow:'Profit now',sellat:'Sell at',act:'Action',hold:'Hold',hit:'SELL',sold:'Sold',avg:'Average buy',coins:'Coins',invested:'Invested',pl:'Profit/Loss now',tgt:'Sell target',stp:'Stop-loss',real:'Already sold (realized)',tgthit:'TARGET REACHED - SELL',stophit:'STOP-LOSS HIT - SELL',waiting:'Waiting',sp1:'Sell price (USDT per coin)?',sp2:'How much did you sell? Total USDT you received',sp3:'You hold less than that.',err:'No market data loaded.',dn1:'Page error',smc:'Analysis error',
+foot:'How it works: for each coin we replay about 20 days of hourly Binance candles. For every past window we measure how high the price went and how deep it dipped. Sell zone 1 / 2 = the level reached in 50% / 20% of those windows. Buy zone = from the typical dip up to the current price. Stop = below the usual dip. The signal combines RSI, trend, MACD and Bollinger bands. Chance = how often similar conditions reached +5% before the stop. These are probabilities from history, not guarantees. Not financial advice. Your data is saved only in this browser.'},
+bn:{title:'কয়েন সিগনাল',market:'মার্কেট',mycoins:'আমার কয়েন',live:'● লাইভ',conn:'সংযোগ হচ্ছে...',off:'সংযোগ নেই',nextup:'পরের আপডেট',updnow:'এখনই আপডেট',check:'সংযোগ পরীক্ষা',updating:'আপডেট হচ্ছে...',fund:'মোট ফান্ড ($)',risk:'প্রতি ট্রেডে ঝুঁকি (%)',h1:'পরের ১ ঘণ্টা',h12:'পরের ১২ ঘণ্টা',h24:'পরের ২৪ ঘণ্টা',addph:'কয়েনের নাম, যেমন ZEC',addcoin:'+ কয়েন যোগ করুন',price:'কেনা দাম',amount:'পরিমাণ ($)',addbuy:'+ আমার কেনা যোগ করুন',tp:'বিক্রির টার্গেট (%)',sl:'স্টপ-লস (%)',sellpart:'কিছু কয়েন বিক্রি',nocoins:'এখনও কোনো কয়েন নেই। কয়েন যোগ করে প্রতিটি কেনা যোগ করুন।',loading:'মার্কেট ডেটা লোড হচ্ছে...',analysing:'{n}/{m} কয়েন বিশ্লেষণ হচ্ছে... কয়েক সেকেন্ডেই প্রথম ফল আসবে।',
+buy:'▲ এখনই কিনুন',wait:'⏳ অপেক্ষা - নামলে কিনুন',sell:'▼ বিক্রি করুন / কিনবেন না',chance:'{h} ঘণ্টায় +৫% হওয়ার সম্ভাবনা',cases:'একই রকম আগের ঘটনা',buyzone:'কেনার জোন',stop:'স্টপ-লস',z1:'বিক্রির জোন ১',z2:'বিক্রির জোন ২',n50:'আগের ৫০% সময়ে পৌঁছেছে',n20:'আগের ২০% সময়ে পৌঁছেছে',dip:'সাধারণ নামা',nstop:'সাধারণ নামার নিচে',
+a_buy:'দাম ভালো। কেনার জোনের ভেতরে অল্প কিনুন।',a_wait:'এখন পরিষ্কার এন্ট্রি নেই। কেনার জোনে অর্ডার দিয়ে অপেক্ষা করুন।',a_sell:'দাম দুর্বল। কিনবেন না। আপনার কাছে থাকলে বিক্রি করুন।',inv:'বিনিয়োগ করুন ${a} (ফান্ডের {p}%): স্টপ হলে -${l}, জোন ১ এ +${g1}, জোন ২ এ +${g2}।',sellby:'টার্গেট না এলে {x} এর মধ্যে বিক্রি করুন।',up:'দাম বাড়ছে',down:'দাম কমছে',today:'আজ',binance:'বাইনান্সে ট্রেড ↗',addmine:'+ আমার কয়েনে যোগ',stabt:'স্টেবল কয়েন (দাম $1 এর কাছাকাছি থাকা উচিত)',stabn:'স্টেবল কয়েনের দাম প্রায় $1, তাই ট্রেডিং লাভ হয় না। নগদ রাখতে ব্যবহার করুন। $1 থেকে অনেক দূরে গেলে ডিপেগ ঝুঁকি।',ok:'স্বাভাবিক',watch:'নজর রাখুন',depeg:'ডিপেগ ঝুঁকি',
+bought:'কেনা দাম',amt:'পরিমাণ',plnow:'এখনকার লাভ',sellat:'বিক্রির দাম',act:'কাজ',hold:'ধরে রাখুন',hit:'বিক্রি',sold:'বিক্রি হয়েছে',avg:'গড় কেনা দাম',coins:'কয়েন',invested:'বিনিয়োগ',pl:'এখনকার লাভ/ক্ষতি',tgt:'বিক্রির টার্গেট',stp:'স্টপ-লস',real:'ইতিমধ্যে বিক্রি (পাকা লাভ/ক্ষতি)',tgthit:'টার্গেট পূর্ণ - বিক্রি করুন',stophit:'স্টপ-লস লেগেছে - বিক্রি করুন',waiting:'অপেক্ষা',sp1:'বিক্রির দাম (প্রতি কয়েন, USDT)?',sp2:'কত বিক্রি করেছেন? মোট কত USDT পেয়েছেন',sp3:'আপনার কাছে এর চেয়ে কম আছে।',err:'মার্কেট ডেটা লোড হয়নি।',dn1:'পেজে সমস্যা',smc:'বিশ্লেষণে সমস্যা',
+foot:'কীভাবে কাজ করে: প্রতিটি কয়েনের প্রায় ২০ দিনের ঘণ্টাভিত্তিক বাইনান্স ক্যান্ডেল আবার চালিয়ে দেখা হয়। প্রতিটি আগের সময়ে দাম কত উঠেছিল ও কত নেমেছিল তা মাপা হয়। বিক্রির জোন ১ / ২ = ওই সময়গুলোর ৫০% / ২০% এ যে দামে পৌঁছেছিল। কেনার জোন = সাধারণ নামা থেকে বর্তমান দাম পর্যন্ত। স্টপ = সাধারণ নামার নিচে। সিগনাল RSI, ট্রেন্ড, MACD ও বলিঞ্জার ব্যান্ড মিলিয়ে হয়। সম্ভাবনা = একই রকম অবস্থায় স্টপের আগে +৫% কতবার হয়েছিল। এগুলো আগের ডেটার সম্ভাবনা, নিশ্চয়তা নয়। আর্থিক পরামর্শ নয়। আপনার ডেটা শুধু এই ব্রাউজারে সেভ থাকে।'}};
+const SK='cs2';let S=JSON.parse(localStorage.getItem(SK)||'null');
+if(!S){let o={};try{o=JSON.parse(localStorage.getItem('ct1')||'null')||{}}catch(e){}S={lang:'en',h:24,bg:(o.pl&&o.pl.bg)||1000,rk:1,tp:10,sl:10,ar:3,coins:(o.coins||[]).map(c=>({s:c.s,e:(c.e||[]).map(x=>({p:x.p,u:x.u,sold:x.sold}))}))}}
+const save=()=>localStorage.setItem(SK,JSON.stringify(S));
+const t=(k,v)=>((TX[S.lang]||TX.en)[k]||TX.en[k]||k).replace(/\{(\w+)\}/g,(_,a)=>v&&v[a]!=null?v[a]:'');
+const f=p=>p==null||isNaN(p)?'...':(+p).toLocaleString('en',{maximumFractionDigits:p>=100?2:p>=1?4:6});
+const hrs=x=>new Date(x).toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'});
+function showErr(e){const b=$('#jserr');b.style.display='block';b.textContent=t('dn1')+': '+((e&&e.message)||e)}
+window.addEventListener('error',ev=>showErr(ev.error||ev.message));
+/* ---------- Binance data (hedged requests: first working host wins, 10s timeout) ---------- */
+const H=['https://api.binance.com','https://data-api.binance.vision','https://api1.binance.com','https://api2.binance.com'];let hi=0,LE='';
+function api(path){return new Promise((res,rej)=>{let done=0,k=0,fails=0;const ctl=[],base=hi;
+const fail=m=>{LE=m.replace('https://','');if(++fails>=H.length&&!done)rej(new Error(LE));else launch()};
+function launch(){if(done||k>=H.length)return;const h=H[(base+k++)%H.length],c=new AbortController(),tm=setTimeout(()=>c.abort(),10000);ctl.push(c);
+fetch(h+path,{signal:c.signal}).then(async r=>{clearTimeout(tm);if(done)return;if(r.ok){done=1;ctl.forEach(x=>{if(x!==c)x.abort()});hi=H.indexOf(h);res(await r.json())}else fail('HTTP '+r.status+' from '+h)}).catch(()=>{clearTimeout(tm);if(!done)fail('Network error or timeout reaching '+h)});
+setTimeout(launch,2500)}
+launch()})}
+const KC={};let TC=null;
+async function kl(s){const c=KC[s];if(c&&Date.now()-c.t<120000)return c.d;const d=await api(`/api/v3/klines?symbol=${s}USDT&interval=1h&limit=500`);KC[s]={t:Date.now(),d};return d}
+async function t24(){if(TC&&Date.now()-TC.t<60000)return TC.d;const d=await api('/api/v3/ticker/24hr');TC={t:Date.now(),d};return d}
+const STB=/^(USDC|FDUSD|TUSD|USDP|BUSD|DAI|EUR|AEUR|USDE|XUSD|USD1)$/,STL=['USDC','FDUSD','TUSD','USDP','DAI','USD1'];
+/* ---------- analysis engine ---------- */
+const ema=(a,n)=>{const k=2/(n+1),o=[];let p=a[0];a.forEach((v,i)=>{p=i?v*k+p*(1-k):v;o.push(p)});return o};
+function rsiA(c,n=14){const o=Array(c.length).fill(50);let g=0,l=0;for(let i=1;i<c.length;i++){const d=c[i]-c[i-1],G=Math.max(d,0),L=Math.max(-d,0);if(i<=n){g+=G;l+=L;if(i==n){g/=n;l/=n;o[i]=100-100/(1+g/(l||1e-9))}}else{g=(g*(n-1)+G)/n;l=(l*(n-1)+L)/n;o[i]=100-100/(1+g/(l||1e-9))}}return o}
+const qs=(a,p)=>{if(!a.length)return 0;const b=a.slice().sort((x,y)=>x-y);return b[Math.floor(p*(b.length-1))]};
+function analyse(raw){const K=raw.slice(0,-1).map(x=>({h:+x[2],l:+x[3],c:+x[4],v:+x[5]})),n=K.length,c=K.map(x=>x.c);if(n<120)throw new Error('not enough candles');
+const E=ema(c,50),E20=ema(c,20),R=rsiA(c);let a=0;const A=K.map((x,i)=>{const tr=i?Math.max(x.h-x.l,Math.abs(x.h-K[i-1].c),Math.abs(x.l-K[i-1].c)):x.h-x.l;a=i<14?(a*i+tr)/(i+1):(a*13+tr)/14;return a});
+const vs=[];let sum=0;K.forEach((x,i)=>{sum+=x.v;if(i>=20)sum-=K[i-20].v;vs.push(sum/Math.min(i+1,20))});
+const e12=ema(c,12),e26=ema(c,26),mac=c.map((_,i)=>e12[i]-e26[i]),sg=ema(mac,9),hist=i=>mac[i]-sg[i],i0=n-1;
+const w20=c.slice(-20),mn=w20.reduce((x,y)=>x+y)/20,sd20=Math.sqrt(w20.reduce((x,y)=>x+(y-mn)**2,0)/20),r=R[i0],h=hist(i0),hp=hist(i0-1);
+let sc=(r<30?2:r<40?1:r>70?-2:r>60?-1:0)+(E20[i0]>E[i0]?1:-1)+(h>0&&h>hp?1:h<0&&h<hp?-1:0)+(c[i0]<mn-2*sd20?1:c[i0]>mn+2*sd20?-1:0);
+const key=i=>(c[i]>E[i]?1:0)+''+(R[i]<40?0:R[i]<60?1:2)+(c[i]>c[Math.max(0,i-6)]?1:0)+(K[i].v>1.5*vs[i]?1:0),sdf=i=>Math.min(.08,Math.max(.015,2*A[i]/c[i])),HS=[1,12,24],TS=[.05,.1],all={},by={};
+const win=(i,H,T)=>{const e=c[i],tp=e*(1+T),sl=e*(1-sdf(i));for(let j=i+1;j<=i+H;j++){if(K[j].l<=sl)return 0;if(K[j].h>=tp)return 1}return 0};
+for(let i=60;i<n-1;i++){const k=key(i);for(const H of HS){if(i+H>n-1)continue;for(const T of TS){const id=H+'_'+T,w=win(i,H,T),x=all[id]=all[id]||{w:0,n:0},y=by[k+id]=by[k+id]||{w:0,n:0};x.w+=w;x.n++;y.w+=w;y.n++}}}
+const k0=key(i0),hz={};for(const H of HS){const o={};for(const T of TS){const id=H+'_'+T,x=all[id]||{w:0,n:0},y=by[k0+id]||{w:0,n:0},base=x.n?x.w/x.n:0,tt=Math.round(T*100);o['p'+tt]=(y.w+10*base)/(y.n+10);o['n'+tt]=y.n}
+const U=[],D=[];for(let i=60;i+H<=n-1;i++){let mx=0,mi=1e12;for(let j=i+1;j<=i+H;j++){mx=Math.max(mx,K[j].h);mi=Math.min(mi,K[j].l)}U.push(mx/c[i]-1);D.push(1-mi/c[i])}
+o.u50=qs(U,.5);o.u80=qs(U,.8);o.d50=qs(D,.5);o.d80=qs(D,.8);hz[H]=o}
+return{p:c[i0],sd:sdf(i0),rsi:r,up:c[i0]>E[i0],sc,hz}}
+/* ---------- market list ---------- */
+const PX={},MK={res:[],busy:0,prog:'',err:'',up:true},CS={};let last=0;
+async function runMarket(){if(MK.busy)return;MK.busy=1;MK.err='';
+try{const all=await t24();all.forEach(x=>PX[x.symbol]=+x.lastPrice);last=Date.now();
+const list=all.filter(x=>x.symbol.endsWith('USDT')&&!STB.test(x.symbol.slice(0,-4))&&+x.quoteVolume>5e6).sort((a,b)=>b.quoteVolume-a.quoteVolume).slice(0,30),res=[];let n=0;
+for(let i=0;i<list.length;i+=10){await Promise.all(list.slice(i,i+10).map(async x=>{try{const r=analyse(await kl(x.symbol.slice(0,-4)));r.s=x.symbol.slice(0,-4);r.chg=+x.priceChangePercent;res.push(r)}catch(e){MK.err=t('smc')+': '+((e&&e.message)||e)}n++}));
+MK.prog=t('analysing',{n:Math.min(n,list.length),m:list.length});MK.res=res.slice();renderMarket()}
+const b=res.find(r=>r.s=='BTC');MK.up=b?b.up:true;MK.prog='';MK.t=Date.now();if(res.length)MK.err=''}
+catch(e){MK.err=t('err')+' '+LE;MK.prog=''}
+MK.busy=0;renderMarket()}
+function card(r){const H=S.h,q=r.hz[H],p=PX[r.s+'USDT']||r.p,sd=Math.min(.12,Math.max(r.sd,q.d80)),sz=Math.min(S.bg*.25,S.bg*S.rk/100/sd)*(q.p5>=.5?1:q.p5>=.3?.7:.5)*(MK.up?1:.5),
+pc=v=>(v*100).toFixed(0)+'%',pp=v=>(v*100).toFixed(1)+'%',k=r.sc>=3?'buy':r.sc<=-3?'sell':'hold',cs=q.n5>=30?'#0ecb81':q.n5>=12?'#fcd535':'#f6465d';
+return`<div class="card ${k=='buy'?'gb':k=='sell'?'gs':''}"><div class="h"><b>${r.s} / USDT</b><a href="https://www.binance.com/en/trade/${r.s}_USDT?type=spot" target="_blank" rel="noopener">${t('binance')}</a></div>
+<div><span class="p">$${f(p)}</span> <span class="sc ${r.chg>=0?'up':'dn'}">${r.chg.toFixed(1)}% ${t('today')}</span></div>
+<div class="act ${k} ${k!='hold'&&Math.abs(r.sc)>=4?'blink':''}">${t(k=='buy'?'buy':k=='sell'?'sell':'wait')}</div><div class="sc">${t(k=='buy'?'a_buy':k=='sell'?'a_sell':'a_wait')}</div>
+<div style="margin-top:8px"><span class="sc">${t('chance',{h:H})}</span><br><b style="font-size:22px">${pc(q.p5)}</b> <span class="sc">(${q.n5} ${t('cases')}) | +10%: <b>${pc(q.p10)}</b></span><div class="bar2"><i style="width:${Math.min(100,q.p5*100)}%"></i></div></div>
+<div class="z"><div>${t('buyzone')}<b class="up">$${f(p*(1-q.d50))} - $${f(p)}</b><span>${t('dip')} -${pp(q.d50)}</span></div><div>${t('stop')}<b class="dn">$${f(p*(1-sd))} (-${pp(sd)})</b><span>${t('nstop')}</span></div>
+<div>${t('z1')} (+${pp(q.u50)})<b class="up">$${f(p*(1+q.u50))}</b><span>${t('n50')}</span></div><div>${t('z2')} (+${pp(q.u80)})<b class="up">$${f(p*(1+q.u80))}</b><span>${t('n20')}</span></div></div>
+<div class="sc" style="margin-top:8px">${t('inv',{a:sz.toFixed(0),p:(sz/(S.bg||1)*100).toFixed(0),l:(sz*sd).toFixed(0),g1:(sz*q.u50).toFixed(0),g2:(sz*q.u80).toFixed(0)})} ${t('sellby',{x:hrs(Date.now()+H*36e5)})} <span style="color:${cs}">${r.up?t('up'):t('down')}, RSI ${r.rsi.toFixed(0)}</span></div>
+<div class="row"><button class="sm" onclick="addCoin('${r.s}')">${t('addmine')}</button></div></div>`}
+function renderMarket(){const o=$('#mk');if(!o)return;const H=S.h,L=MK.res.filter(r=>r.hz[H]).sort((a,b)=>b.hz[H].p5-a.hz[H].p5).slice(0,12);
+if(!L.length){o.innerHTML=`<div class="todo">${MK.prog||t('loading')}${MK.err?'<br><span class="dn">'+MK.err+'</span>':''}</div>`;return}
+o.innerHTML=(MK.prog?`<div class="sc">${MK.prog}</div>`:'')+(MK.err?`<div class="todo dn">${MK.err}</div>`:'')+`<div class="g">${L.map(card).join('')}</div>`;
+const s=STL.filter(x=>PX[x+'USDT']).map(x=>{const v=PX[x+'USDT'],d=(v-1)*100,a=Math.abs(d),st=a<=.3?['ok','#0ecb81']:a<=1?['watch','#fcd535']:['depeg','#f6465d'];return`<div>${x}<b style="color:${st[1]}">$${v.toFixed(4)}</b><span>${d>=0?'+':''}${d.toFixed(2)}% - ${t(st[0])}</span></div>`}).join('');
+$('#stb').innerHTML=s?`<h3 style="font-size:15px;margin:14px 0 4px">${t('stabt')}</h3><div class="z" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">${s}</div><div class="sc" style="margin-top:6px">${t('stabn')}</div>`:''}
+/* ---------- my coins ---------- */
+const gc=s=>S.coins.find(c=>c.s==s);
+async function addCoin(x){const i=$('#ac'),s=(typeof x=='string'?x:i.value).toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,'');if(!s||gc(s))return;S.coins.push({s,e:[]});i.value='';save();fillSel();renderCoins();loadCoin(s);tab('c')}
+function fillSel(){$('#bc').innerHTML=S.coins.map(c=>`<option>${c.s}</option>`).join('')}
+function addBuy(){const s=$('#bc').value,p=+$('#bp').value,u=+$('#bu').value;if(s&&p>0&&u>0){gc(s).e.push({p,u});$('#bp').value=$('#bu').value='';save();renderCoins()}}
+function de(s,i){gc(s).e.splice(i,1);save();renderCoins()}
+function rm(s){S.coins=S.coins.filter(c=>c.s!=s);save();fillSel();renderCoins()}
+function sd(s,i){const n=+prompt(t('sp1'));if(n>0){const x=gc(s).e[i];x.sold=n;save();renderCoins()}}
+function sp(s){const c=gc(s),pr=+prompt(t('sp1'));if(!(pr>0))return;const rec=+prompt(t('sp2'));if(!(rec>0))return;let rem=rec/pr;const tot=c.e.filter(x=>!x.sold).reduce((a,x)=>a+x.u/x.p,0);if(rem>tot*1.0001){alert(t('sp3'));return}
+const ne=[];c.e.forEach(x=>{if(x.sold||rem<=1e-12){ne.push(x);return}const eq=x.u/x.p,k=Math.min(eq,rem);rem-=k;ne.push({p:x.p,u:k*x.p,sold:pr});if(eq-k>1e-9)ne.push({p:x.p,u:(eq-k)*x.p})});c.e=ne;save();renderCoins()}
+async function loadCoin(s){try{CS[s]=analyse(await kl(s))}catch(e){}renderCoins()}
+function beep(){try{const a=new(window.AudioContext||webkitAudioContext)(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();setTimeout(()=>{o.stop();a.close()},300)}catch(e){}}
+function notify(a,b){beep();if(window.Notification&&Notification.permission=='granted'){try{new Notification(a,{body:b})}catch(e){}}}
+function enNotif(){if(window.Notification)Notification.requestPermission()}
+function renderCoins(){const o=$('#cl');if(!o)return;if(!S.coins.length){o.innerHTML=`<div class="todo">${t('nocoins')}</div>`;return}
+o.innerHTML='<div class="g">'+S.coins.map(c=>{const p=PX[c.s+'USDT'],op=c.e.filter(x=>!x.sold),inv=op.reduce((a,x)=>a+x.u,0),q=op.reduce((a,x)=>a+x.u/x.p,0),avg=q?inv/q:0,real=c.e.filter(x=>x.sold).reduce((a,x)=>a+x.u/x.p*(x.sold-x.p),0),a=CS[c.s],sg=a?(a.sc>=3?'buy':a.sc<=-3?'sell':'hold'):'hold';
+const rows=c.e.map((x,i)=>{const qq=x.u/x.p,del=`<i style="cursor:pointer;color:var(--r)" onclick="de('${c.s}',${i})">✕</i>`;
+if(x.sold){const rp=qq*(x.sold-x.p);return`<tr style="color:var(--m)"><td>#${i+1}</td><td>$${f(x.p)}</td><td>$${+x.u.toFixed(2)}</td><td colspan="2" class="${rp>=0?'up':'dn'}">${t('sold')} @ $${f(x.sold)}: ${rp>=0?'+':''}${rp.toFixed(2)}$</td><td>${del}</td></tr>`}
+const tg=x.p*(1+S.tp/100),pl=p?qq*p-x.u:0,hit=p&&p>=tg;if(hit&&!x.n){x.n=1;save();notify(c.s,t('tgthit'))}
+return`<tr><td>#${i+1}</td><td>$${f(x.p)}</td><td>$${+x.u.toFixed(2)}</td><td class="${pl>=0?'up':'dn'}">${pl>=0?'+':''}${pl.toFixed(2)}$ (${(pl/x.u*100).toFixed(1)}%)</td><td>$${f(tg)}</td><td>${hit?`<span class="blink up"><b>${t('hit')}</b></span>`:t('hold')} <button class="sm" onclick="sd('${c.s}',${i})">${t('sold')}</button> ${del}</td></tr>`}).join('');
+let sum='';if(q){const tg=avg*(1+S.tp/100),sl=avg*(1-S.sl/100),pl=p?p*q-inv:0;let A=t('waiting'),ac='hold';if(p){if(p>=tg){A=t('tgthit');ac='buy blink'}else if(p<=sl){A=t('stophit');ac='sell blink';if(!c.sn){c.sn=1;save();notify(c.s,A)}}}
+sum=`<div class="todo"><b>${t('avg')}: $${f(avg)}</b> | ${t('coins')}: ${q.toFixed(4)} | ${t('invested')}: $${inv.toFixed(2)}<br><span class="${pl>=0?'up':'dn'}">${t('pl')}: <b>${pl>=0?'+':''}${pl.toFixed(2)}$ (${p?(pl/inv*100).toFixed(2):'0.00'}%)</b></span><br>${t('tgt')}: <b>$${f(tg)}</b> | ${t('stp')}: <b>$${f(sl)}</b>${real?`<br>${t('real')}: <b class="${real>=0?'up':'dn'}">${real>=0?'+':''}${real.toFixed(2)}$</b>`:''}<div class="act ${ac}" style="margin:6px 0 0">${A}</div></div>`}
+return`<div class="card ${sg=='buy'?'gb':sg=='sell'?'gs':''}"><div class="h"><b>${c.s} / USDT</b><a href="https://www.binance.com/en/trade/${c.s}_USDT?type=spot" target="_blank" rel="noopener">${t('binance')}</a><button class="sm" style="background:none;color:var(--m)" onclick="rm('${c.s}')">✕</button></div><div><span class="p">$${f(p)}</span></div>
+${a?`<div class="act ${sg} ${sg!='hold'&&Math.abs(a.sc)>=4?'blink':''}">${t(sg=='buy'?'buy':sg=='sell'?'sell':'wait')}</div>`:''}
+<div style="overflow-x:auto"><table><tr><th>#</th><th>${t('bought')}</th><th>${t('amt')}</th><th>${t('plnow')}</th><th>${t('sellat')}</th><th>${t('act')}</th></tr>${rows}</table></div>${sum}<div class="row"><button class="sm" onclick="sp('${c.s}')">${t('sellpart')}</button></div></div>`}).join('')+'</div>'}
+async function runCoins(){await Promise.all(S.coins.map(c=>loadCoin(c.s)))}
+/* ---------- prices, status, timer ---------- */
+async function poll(){const syms=[...new Set([...S.coins.map(c=>c.s),...MK.res.map(r=>r.s).slice(0,40),...STL].map(x=>x+'USDT'))];if(!syms.length)return;
+try{const a=await api('/api/v3/ticker/price?symbols='+encodeURIComponent(JSON.stringify(syms)));a.forEach(x=>PX[x.symbol]=+x.price);last=Date.now();renderMarket();renderCoins()}catch(e){}}
+let nextAt=0,busy=0;const t0=Date.now();
+function stat(){const a=(Date.now()-last)/1000,el=$('#st');let k='conn',c='wait';if(last){if(a<20){k='live';c='ok'}else{k='off';c='bad'}}else if(Date.now()-t0>20000){k='off';c='bad'}el.textContent=t(k);el.className='pill '+c;if(!last&&Date.now()-t0>20000&&!window.dgRan){window.dgRan=1;diag()}}
+async function tick(){const cd=$('#cd');if(document.hidden)return;const l=Math.ceil((nextAt-Date.now())/1000);if(busy||l>0){cd.textContent=busy?t('updating'):Math.floor(l/60)+':'+String(l%60).padStart(2,'0');return}
+busy=1;cd.textContent=t('updating');try{await Promise.all([runMarket(),runCoins()])}catch(e){showErr(e)}busy=0;nextAt=Date.now()+S.ar*60000}
+async function diag(){const o=$('#dg');o.style.display='block';o.textContent='...';
+const r=await Promise.all(H.map(async h=>{const s=Date.now(),n=h.replace('https://','');try{const c=new AbortController();setTimeout(()=>c.abort(),8000);const x=await fetch(h+'/api/v3/ping',{signal:c.signal});return n+': '+(x.ok?'OK '+(Date.now()-s)+' ms':'HTTP '+x.status)}catch(e){return n+': blocked / timeout'}}));
+o.innerHTML='<b>Connection check</b> <button class="sm" onclick="this.parentNode.style.display=\'none\'">x</button><br>'+r.join('<br>')+'<br><span class="sc">All blocked? Try a VPN or mobile data. Open the GitHub Pages link in Chrome.</span>'}
+/* ---------- language + tabs ---------- */
+function applyLang(){document.documentElement.lang=S.lang;document.querySelectorAll('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));document.querySelectorAll('[data-p]').forEach(e=>e.placeholder=t(e.dataset.p));$('#lg').textContent=S.lang=='bn'?'English':'বাংলা';$('#h1').classList.toggle('on',S.h==1);$('#h12').classList.toggle('on',S.h==12);$('#h24').classList.toggle('on',S.h==24);renderMarket();renderCoins()}
+function setLang(){S.lang=S.lang=='bn'?'en':'bn';save();applyLang()}
+function setH(h){S.h=h;save();applyLang()}
+function tab(x){$('#pm').style.display=x=='m'?'block':'none';$('#pc').style.display=x=='c'?'block':'none';$('#tm').classList.toggle('on',x=='m');$('#tc').classList.toggle('on',x=='c')}
+try{$('#bg').value=S.bg;$('#rk').value=S.rk;$('#tp').value=S.tp;$('#sl').value=S.sl;fillSel();applyLang()}catch(e){showErr(e)}
+setInterval(tick,1000);setInterval(poll,5000);setInterval(stat,1000);poll();stat();
+</script></body></html>
